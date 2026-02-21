@@ -158,12 +158,7 @@ export default function Projects() {
                             </div>
 
                             <div className="flex-1 py-2 flex flex-col">
-                                <div className="flex justify-between items-start">
-                                    <h3 className="font-black text-xl text-slate-800 leading-tight group-hover:text-indigo-600 transition-colors">{p.title}</h3>
-                                    <a href={p.project_url} target="_blank" rel="noreferrer" className="bg-slate-100 p-2 rounded-full hover:bg-indigo-100 transition-colors">
-                                        🔗
-                                    </a>
-                                </div>
+                            
 
                                 <p className="text-slate-400 text-sm line-clamp-2 mt-2 leading-relaxed">{p.desc}</p>
 
