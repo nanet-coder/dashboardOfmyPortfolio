@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../supabaseClient";
 import { uploadImage } from "../../utils/uploadImage";
-import { HiPlus, HiX, HiLightningBolt } from "react-icons/hi";
+import { HiPlus, HiX, HiLightningBolt, HiSearch } from "react-icons/hi";
 
 export default function Skills() {
     const [skills, setSkills] = useState([]);
+    const [searchTerm, setSearchTerm] = useState(""); // 1. Search State
     const [name, setName] = useState("");
     const [rating, setRating] = useState("");
     const [imageFile, setImageFile] = useState(null);
@@ -18,6 +19,11 @@ export default function Skills() {
     };
 
     useEffect(() => { fetchSkills(); }, []);
+
+    // 2. Filter Logic
+    const filteredSkills = skills.filter(skill =>
+        skill.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
     const handleAddSkill = async (e) => {
         e.preventDefault();
@@ -70,34 +76,62 @@ export default function Skills() {
                     </div>
                 </div>
 
-                {/* SKILLS LIST */}
-                <div className="lg:col-span-2 overflow-y-auto scrollbar-hide pr-2 pb-20">
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                        {skills.map(s => (
-                            <div key={s.id} className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col items-center text-center group transition-all relative hover:shadow-lg hover:-translate-y-1">
-                                <button onClick={async () => { if (confirm("Delete this skill?")) { await supabase.from("skills").delete().eq("id", s.id); fetchSkills(); } }} className="absolute top-4 right-4 text-slate-200 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <HiX size={18} />
-                                </button>
+                {/* SKILLS LIST + SEARCH */}
+                <div className="lg:col-span-2 flex flex-col h-full overflow-hidden">
 
-                                <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mb-4 p-2 group-hover:bg-indigo-50 transition-colors">
-                                    {s.icon_url ? <img src={s.icon_url} className="w-full h-full object-contain" /> : <HiLightningBolt className="text-slate-300" size={24} />}
-                                </div>
+                    {/* 3. BORDERLESS SEARCH BOX */}
+                    <div className="relative mb-6 group">
+                        <input
+                            type="text"
+                            placeholder="Search skills..."
+                            className="w-full p-4 pl-12 bg-white rounded-3xl border-none shadow-sm focus:shadow-md focus:ring-0 outline-none transition-all text-slate-600 font-semibold"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                        <HiSearch className="absolute left-4 top-4 text-slate-300 group-focus-within:text-indigo-500 transition-colors" size={24} />
 
-                                <div className="flex flex-col items-center">
-                                    <h3 className="font-black text-slate-800 text-xs uppercase tracking-wider">{s.name}</h3>
-                                    {/* FIXED: Added % display here */}
-                                    <span className="text-[10px] font-bold text-indigo-500 mt-1">{s.rating}%</span>
-                                </div>
+                        {searchTerm && (
+                            <button
+                                onClick={() => setSearchTerm("")}
+                                className="absolute right-4 top-4 text-slate-300 hover:text-rose-500 transition-colors"
+                            >
+                                <HiX size={20} />
+                            </button>
+                        )}
+                    </div>
 
-                                {/* Progress Bar */}
-                                <div className="bg-slate-100 h-1.5 rounded-full mt-4 w-full overflow-hidden">
-                                    <div
-                                        className="bg-indigo-500 h-full rounded-full transition-all duration-1000"
-                                        style={{ width: `${s.rating}%` }}
-                                    ></div>
+                    <div className="flex-1 overflow-y-auto scrollbar-hide pr-2 pb-20">
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                            {filteredSkills.length === 0 ? (
+                                <div className="col-span-full text-center py-20 bg-white rounded-[2.5rem] border-2 border-dashed border-slate-100 text-slate-300 font-bold uppercase tracking-widest">
+                                    {searchTerm ? "Skill not found" : "No skills added yet"}
                                 </div>
-                            </div>
-                        ))}
+                            ) : (
+                                filteredSkills.map(s => (
+                                    <div key={s.id} className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col items-center text-center group transition-all relative hover:shadow-lg hover:-translate-y-1">
+                                        <button onClick={async () => { if (confirm("Delete this skill?")) { await supabase.from("skills").delete().eq("id", s.id); fetchSkills(); } }} className="absolute top-4 right-4 text-slate-200 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <HiX size={18} />
+                                        </button>
+
+                                        <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mb-4 p-2 group-hover:bg-indigo-50 transition-colors">
+                                            {s.icon_url ? <img src={s.icon_url} className="w-full h-full object-contain" /> : <HiLightningBolt className="text-slate-300" size={24} />}
+                                        </div>
+
+                                        <div className="flex flex-col items-center">
+                                            <h3 className="font-black text-slate-800 text-xs uppercase tracking-wider">{s.name}</h3>
+                                            <span className="text-[10px] font-bold text-indigo-500 mt-1">{s.rating}%</span>
+                                        </div>
+
+                                        <div className="bg-slate-100 h-1.5 rounded-full mt-4 w-full overflow-hidden">
+                                            <div
+                                                className="bg-indigo-500 h-full rounded-full transition-all duration-1000"
+                                                style={{ width: `${s.rating}%` }}
+                                            ></div>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
