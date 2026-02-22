@@ -1,174 +1,138 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../supabaseClient";
 import { uploadImage } from "../../utils/uploadImage";
+import { HiPlus, HiX, HiLink, HiExternalLink } from "react-icons/hi";
 
 export default function Projects() {
     const [projects, setProjects] = useState([]);
     const [title, setTitle] = useState("");
     const [desc, setDesc] = useState("");
-    const [projectUrl, setProjectUrl] = useState("");
+    const [projectUrl, setProjectUrl] = useState(""); // State for the URL
     const [imageFile, setImageFile] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
     const [editingId, setEditingId] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     const fetchProjects = async () => {
-        const { data, error } = await supabase.from("projects").select("*").order("created_at", { ascending: false });
-        if (error) console.log(error);
-        else setProjects(data);
+        const { data } = await supabase.from("projects").select("*").order("created_at", { ascending: false });
+        setProjects(data || []);
     };
 
     useEffect(() => { fetchProjects(); }, []);
 
-    const saveProject = async (e) => {
+    const openForm = (p = null) => {
+        if (p) {
+            setEditingId(p.id);
+            setTitle(p.title);
+            setDesc(p.desc);
+            setProjectUrl(p.project_url || ""); // Populate URL for editing
+            setImagePreview(p.image_url);
+        } else {
+            setEditingId(null);
+            setTitle("");
+            setDesc("");
+            setProjectUrl(""); // Reset URL for new entry
+            setImagePreview(null);
+            setImageFile(null);
+        }
+        setIsModalOpen(true);
+    };
+
+    const handleSave = async (e) => {
         e.preventDefault();
         setLoading(true);
-        let image_url = imagePreview; // Default to existing if editing
+        try {
+            let image_url = imagePreview;
+            if (imageFile) image_url = await uploadImage(imageFile);
 
-        if (imageFile) {
-            image_url = await uploadImage(imageFile);
-        }
+            // Payload now includes project_url
+            const payload = {
+                title,
+                desc,
+                project_url: projectUrl,
+                image_url
+            };
 
-        const payload = { title, desc, project_url: projectUrl, image_url };
+            if (editingId) await supabase.from("projects").update(payload).eq("id", editingId);
+            else await supabase.from("projects").insert(payload);
 
-        if (editingId) {
-            await supabase.from("projects").update(payload).eq("id", editingId);
-        } else {
-            await supabase.from("projects").insert(payload);
-        }
-
-        // Reset Form
-        setTitle(""); setDesc(""); setProjectUrl("");
-        setImageFile(null); setImagePreview(null); setEditingId(null);
-        fetchProjects();
+            setIsModalOpen(false);
+            fetchProjects();
+        } catch (err) { alert(err.message); }
         setLoading(false);
     };
 
-    const editProject = (p) => {
-        setTitle(p.title); setDesc(p.desc); setProjectUrl(p.project_url);
-        setImagePreview(p.image_url); setEditingId(p.id); setImageFile(null);
-    };
-
-    const deleteProject = async (id) => {
-        if (window.confirm("Delete this project?")) {
-            await supabase.from("projects").delete().eq("id", id);
-            fetchProjects();
-        }
-    };
-
     return (
-        /* Container fixed height to match Blogs/Skills scroll logic */
-        <div className="grid lg:grid-cols-3 gap-10 h-[calc(100vh-180px)] overflow-hidden">
+        <div className="relative">
+            {/* FAB for Mobile */}
+            <button onClick={() => openForm()} className="lg:hidden fixed bottom-6 right-6 z-[60] bg-indigo-600 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center active:scale-90 transition-transform">
+                <HiPlus size={28} />
+            </button>
 
-            {/* LEFT COLUMN: STICKY FORM */}
-            <div className="lg:col-span-1 pb-4">
-                <form
-                    className="space-y-4 bg-slate-50 p-6 rounded-[2.5rem] border border-slate-100 shadow-inner h-full overflow-y-auto scrollbar-hide"
-                    onSubmit={saveProject}
-                >
-                    <h2 className="text-xl font-black text-slate-800 mb-2 flex items-center gap-2">
-                        🚀 {editingId ? "Edit Project" : "New Project"}
-                    </h2>
+            <div className="grid lg:grid-cols-3 gap-10 h-[calc(100vh-220px)] overflow-hidden">
+                {/* FORM COLUMN / MODAL */}
+                <div className={`${isModalOpen ? "fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" : "hidden lg:block lg:col-span-1"}`}>
+                    <div className="bg-white lg:bg-transparent w-full max-w-xl p-6 lg:p-0 rounded-[2.5rem] relative max-h-[90vh] overflow-y-auto scrollbar-hide">
+                        <button onClick={() => setIsModalOpen(false)} className="lg:hidden absolute top-4 right-6 text-slate-400"><HiX size={24} /></button>
 
-                    <input
-                        type="text"
-                        placeholder="Project Title"
-                        className="w-full p-4 rounded-2xl border-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
-                        value={title}
-                        onChange={e => setTitle(e.target.value)}
-                        required
-                    />
+                        <form className="space-y-4 bg-slate-50 p-6 rounded-[2.5rem] border border-slate-100 shadow-inner" onSubmit={handleSave}>
+                            <h2 className="text-xl font-black text-slate-800">🚀 {editingId ? "Edit" : "New"} Project</h2>
 
-                    <textarea
-                        placeholder="Description..."
-                        className="w-full p-4 rounded-2xl border-none h-32 shadow-sm focus:ring-2 focus:ring-indigo-500"
-                        value={desc}
-                        onChange={e => setDesc(e.target.value)}
-                        required
-                    />
+                            <input type="text" placeholder="Project Title" className="w-full p-4 rounded-2xl border-none shadow-sm" value={title} onChange={e => setTitle(e.target.value)} required />
 
-                    <input
-                        type="url"
-                        placeholder="Project URL (Demo Link)"
-                        className="w-full p-4 rounded-2xl border-none shadow-sm focus:ring-2 focus:ring-indigo-500"
-                        value={projectUrl}
-                        onChange={e => setProjectUrl(e.target.value)}
-                    />
-
-                    {/* Image Upload Area */}
-                    <div className="border-2 border-dashed border-slate-300 rounded-2xl p-6 text-center relative group hover:border-indigo-400 transition-colors bg-white">
-                        <input
-                            type="file"
-                            accept="image/*"
-                            className="absolute inset-0 opacity-0 cursor-pointer z-10"
-                            onChange={e => {
-                                setImageFile(e.target.files[0]);
-                                if (e.target.files[0]) setImagePreview(URL.createObjectURL(e.target.files[0]));
-                            }}
-                        />
-                        {imagePreview ? (
-                            <img src={imagePreview} className="h-32 w-full object-cover rounded-xl" />
-                        ) : (
-                            <div className="py-4">
-                                <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Upload Project Screenshot</p>
+                            {/* NEW: Project URL Field */}
+                            <div className="relative">
+                                <input
+                                    type="url"
+                                    placeholder="Project Link (https://...)"
+                                    className="w-full p-4 pl-12 rounded-2xl border-none shadow-sm"
+                                    value={projectUrl}
+                                    onChange={e => setProjectUrl(e.target.value)}
+                                />
+                                <HiLink className="absolute left-4 top-4 text-slate-400" size={20} />
                             </div>
-                        )}
+
+                            <textarea placeholder="Description" className="w-full p-4 rounded-2xl border-none h-24 shadow-sm" value={desc} onChange={e => setDesc(e.target.value)} required />
+
+                            <div className="border-2 border-dashed border-slate-300 rounded-2xl p-4 text-center bg-white relative hover:border-indigo-400 transition-colors">
+                                <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => { setImageFile(e.target.files[0]); if (e.target.files[0]) setImagePreview(URL.createObjectURL(e.target.files[0])); }} />
+                                {imagePreview ? <img src={imagePreview} className="h-20 mx-auto rounded-xl" /> : <p className="text-[10px] font-bold text-slate-400 uppercase">Screenshot</p>}
+                            </div>
+
+                            <button disabled={loading} className="w-full py-4 bg-indigo-600 text-white font-black rounded-2xl shadow-xl hover:bg-indigo-700 transition-all">
+                                {loading ? "SAVING..." : "SAVE PROJECT"}
+                            </button>
+                        </form>
                     </div>
+                </div>
 
-                    <button
-                        disabled={loading}
-                        className="w-full py-4 bg-indigo-600 text-white font-black rounded-2xl shadow-xl shadow-indigo-100 hover:bg-indigo-700 hover:-translate-y-1 transition-all"
-                    >
-                        {loading ? "SAVING..." : editingId ? "UPDATE PROJECT" : "ADD PROJECT"}
-                    </button>
+                {/* LIST COLUMN */}
+                <div className="lg:col-span-2 overflow-y-auto scrollbar-hide pr-2 pb-20">
+                    <div className="grid grid-cols-1 gap-6">
+                        {projects.map(p => (
+                            <div key={p.id} className="bg-white p-5 rounded-[2.5rem] border border-slate-100 flex flex-col md:flex-row gap-6 hover:shadow-lg transition-all group">
+                                <img src={p.image_url} className="w-full md:w-40 h-32 rounded-[1.5rem] object-cover shadow-sm" alt="" />
+                                <div className="flex-1 flex flex-col">
+                                    <div className="flex justify-between items-start">
+                                        <h3 className="font-black text-lg text-slate-800">{p.title}</h3>
+                                        {/* Display URL link if it exists */}
+                                        {p.project_url && (
+                                            <a href={p.project_url} target="_blank" rel="noreferrer" className="text-indigo-500 hover:text-indigo-700 transition-colors">
+                                                <HiExternalLink size={20} />
+                                            </a>
+                                        )}
+                                    </div>
+                                    <p className="text-slate-400 text-xs mt-2 line-clamp-2">{p.desc}</p>
 
-                    {editingId && (
-                        <button
-                            type="button"
-                            onClick={() => { setEditingId(null); setTitle(""); setDesc(""); setProjectUrl(""); setImagePreview(null); }}
-                            className="w-full py-2 text-slate-400 font-bold text-xs uppercase"
-                        >
-                            Cancel Edit
-                        </button>
-                    )}
-                </form>
-            </div>
-
-            {/* RIGHT COLUMN: SCROLLABLE LIST (FULL COLOR) */}
-            <div className="lg:col-span-2 overflow-y-auto scrollbar-hide pr-2 pb-10">
-                <div className="grid grid-cols-1 gap-6">
-                    {projects.length === 0 && (
-                        <div className="p-20 text-center text-slate-300 font-bold border-2 border-dashed rounded-[3rem]">
-                            No projects yet.
-                        </div>
-                    )}
-
-                    {projects.map(p => (
-                        <div
-                            key={p.id}
-                            className="bg-white p-5 rounded-[2.5rem] border border-slate-100 flex flex-col md:flex-row gap-6 hover:shadow-xl transition-all group relative overflow-hidden"
-                        >
-                            {/* Full Color Image - No Grayscale */}
-                            <div className="w-full md:w-56 h-40 shrink-0 relative rounded-[2rem] overflow-hidden shadow-sm">
-                                {p.image_url ? (
-                                    <img src={p.image_url} alt="" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
-                                ) : (
-                                    <div className="w-full h-full bg-slate-100 flex items-center justify-center text-slate-300 italic text-xs">No Image</div>
-                                )}
-                            </div>
-
-                            <div className="flex-1 py-2 flex flex-col">
-                            
-
-                                <p className="text-slate-400 text-sm line-clamp-2 mt-2 leading-relaxed">{p.desc}</p>
-
-                                <div className="flex gap-4 mt-auto pt-4 border-t border-slate-50">
-                                    <button onClick={() => editProject(p)} className="text-indigo-600 font-black text-xs uppercase hover:text-indigo-400">Edit</button>
-                                    <button onClick={() => deleteProject(p.id)} className="text-rose-500 font-black text-xs uppercase hover:text-rose-300">Delete</button>
+                                    <div className="flex gap-4 mt-auto pt-4 border-t border-slate-50">
+                                        <button onClick={() => openForm(p)} className="text-indigo-600 font-black text-xs uppercase hover:underline">Edit</button>
+                                        <button onClick={async () => { if (confirm("Delete?")) { await supabase.from("projects").delete().eq("id", p.id); fetchProjects(); } }} className="text-rose-500 font-black text-xs uppercase hover:underline">Delete</button>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    ))}
+                        ))}
+                    </div>
                 </div>
             </div>
         </div>
