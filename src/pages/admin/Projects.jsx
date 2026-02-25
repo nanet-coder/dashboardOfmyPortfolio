@@ -74,8 +74,8 @@ export default function Projects() {
             <div className="grid lg:grid-cols-3 gap-10 h-[calc(100vh-220px)] overflow-hidden">
                 {/* FORM COLUMN / MODAL */}
                 <div className={`${isModalOpen ? "fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" : "hidden lg:block lg:col-span-1"}`}>
-                    <div className="bg-white lg:bg-transparent w-full max-w-xl p-6 lg:p-0 rounded-[2.5rem] relative max-h-[90vh] overflow-y-auto scrollbar-hide">
-                        <button onClick={() => setIsModalOpen(false)} className="lg:hidden absolute top-4 right-6 text-slate-400"><HiX size={24} /></button>
+                    <div className="bg-white lg:bg-transparent w-full max-w-xl p-6 lg:p-0 rounded-[2.5rem] relative max-h-[90vh] overflow-y-auto scrollbar-hide ">
+                        <button onClick={() => setIsModalOpen(false)} className="lg:hidden absolute top-3 right-3 text-slate-400 hover:text-rose-500 transition-colors"><HiX size={24} /></button>
 
                         <form className="space-y-4 bg-slate-50 p-6 rounded-[2.5rem] border border-slate-100 shadow-inner" onSubmit={handleSave}>
                             <h2 className="text-xl font-black text-slate-800">🚀 {editingId ? "Edit" : "New"} Project</h2>

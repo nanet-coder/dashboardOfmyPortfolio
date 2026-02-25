@@ -89,7 +89,7 @@ export default function Blogs() {
     };
 
     return (
-        <div className="relative p-4 lg:p-10">
+        <div className="relative ">
             {/* MOBILE FLOATING BUTTON */}
             <button
                 onClick={() => openForm()}
@@ -98,12 +98,12 @@ export default function Blogs() {
                 <HiPlus size={28} />
             </button>
 
-            <div className="grid lg:grid-cols-3 gap-10 h-[calc(100vh-100px)] lg:h-[calc(100vh-150px)]">
+            <div className="grid lg:grid-cols-3 gap-10 h-[calc(100vh-220px)] overflow-hidden">
 
                 {/* LEFT COLUMN: FORM */}
                 <div className={`${isModalOpen ? "fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-md" : "hidden lg:block lg:col-span-1"}`}>
                     <div className="bg-white lg:bg-transparent w-full max-w-xl lg:max-w-none p-6 lg:p-0 rounded-[2.5rem] relative max-h-[90vh] lg:max-h-full flex flex-col shadow-2xl lg:shadow-none">
-                        <button onClick={() => { setIsModalOpen(false); resetForm(); }} className="lg:hidden absolute top-4 right-6 text-slate-400 hover:text-rose-500 transition-colors">
+                        <button onClick={() => { setIsModalOpen(false); resetForm(); }} className="lg:hidden absolute top-3 right-3 text-slate-400 hover:text-rose-500 transition-colors">
                             <HiX size={24} />
                         </button>
                         <form className="space-y-4 bg-slate-50 p-6 rounded-[2.5rem] border border-slate-100 shadow-inner overflow-y-auto scrollbar-hide" onSubmit={handleSubmit}>

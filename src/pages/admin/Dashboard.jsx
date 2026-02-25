@@ -96,7 +96,7 @@ export default function Dashboard() {
                     )}
 
                     {/* CONTENT CONTAINER */}
-                    <div className={pathname === "/admin" ? "" : "bg-white rounded-[3rem] border border-slate-200 p-4 lg:p-8 shadow-sm min-h-[70vh]"}>
+                    <div className={pathname === "/admin" ? "" : "bg-white rounded-[3rem] border border-slate-200 p-4 lg:p-4 shadow-sm min-h-[70vh]"}>
                         <Outlet />
                     </div>
                 </main>
